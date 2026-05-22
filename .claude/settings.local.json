@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(python -c \"import pypdf, sys; print\\('pypdf available'\\)\")",
+      "PowerShell(python -c \"import fitz; print\\('PyMuPDF available'\\)\")",
+      "PowerShell(python -c \"import importlib.util; mods=['pypdf','PyPDF2','fitz','pdfplumber','reportlab','fpdf','weasyprint']; [print\\(m, bool\\(importlib.util.find_spec\\(m\\)\\)\\) for m in mods]\")",
+      "PowerShell(python -m pip install pypdf PyPDF2 PyMuPDF)"
+    ]
+  }
+}
