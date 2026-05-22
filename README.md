@@ -1,44 +1,46 @@
-# Pipeline de Junção de Tickers B3 e CNPJs
+# B3 Share Pipeline
 
-Esta pipeline atualiza a base de dados para o estudo de cálculo de share B3, reunindo tickers da B3 com CNPJs extraídos da API oficial.
+This pipeline updates the database for the B3 share calculation study by joining B3 tickers with CNPJs extracted from the official API.
 
-## Visão geral
-A arquitetura segue uma organização em camadas:
-- `data/staging/`: camada de ingestão e staging onde os dados brutos e normalizados ficam armazenados
-- `data/marts/`: camada de consumo final, com o conjunto de dados pronto para análise e downstream
+## Overview
+The architecture follows a layered data organization:
+- `data/staging/`: ingestion and staging layer where raw and normalized data is stored
+- `data/marts/`: final consumption layer with clean data ready for analysis and downstream
 
-## O que faz
-- coleta a tabela de tickers do site `https://www.dadosdemercado.com.br/acoes`
-- faz requisições paginadas à API B3 em `https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetInitialCompanies/...`
-- junta os dados usando os 4 primeiros caracteres do ticker com o campo `issuingCompany` da API
-- salva o resultado final em `data/marts/b3_ticker_cnpj.csv`
+## What it does
+- collects the ticker table from `https://www.dadosdemercado.com.br/acoes`
+- makes paginated requests to the B3 API at `https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetInitialCompanies/...`
+- joins data using the first 4 characters of the ticker matched with the API's `issuingCompany` field
+- saves the final result to `data/marts/b3_ticker_cnpj.csv`
+- filters output to include only tickers ending in 3, 4, 5, or 6 (standard B3 equity types)
 
-## Como usar
-1. Execute:
+## How to use
+1. Run:
 
 ```bash
-python b3_share_pipeline.py
+python scripts/b3_share_pipeline.py
 ```
 
-2. Os arquivos gerados serão:
+2. Generated output files:
 
 - `data/staging/dadosdemercado_tickers.csv`
 - `data/staging/b3_api_raw.json`
 - `data/staging/b3_api_normalized.csv`
 - `data/marts/b3_ticker_cnpj.csv`
 
-## Estrutura de dados
-- `staging`: contém dados intermediários e versões consolidadas antes da transformação final
-- `marts`: contém dados prontos para estudos, relatórios ou consumo em modelos analíticos
+## Data structure
+- `staging/`: contains intermediate data and consolidated versions before final transformation
+- `marts/`: contains clean data ready for studies, reports, or consumption in analytical models
 
-## Boas práticas de engenharia de dados aplicadas
-- separação clara entre ingestão (`staging`) e produto final (`marts`)
-- persistência de dados brutos e normalizados para auditabilidade e reprovação
-- uso de caminhos determinísticos para facilitar reprocessamento e idempotência
-- trabalho com nomes bem definidos e campos normalizados antes do join
-- documentação de regras de negócio: join por prefixo de 4 caracteres do ticker
+## Data engineering best practices applied
+- clear separation between ingestion (`staging`) and final product (`marts`)
+- persistence of raw and normalized data for auditability and reprocessing
+- deterministic paths to facilitate reprocessing and idempotency
+- well-defined names and normalized fields before the join operation
+- documented business rules: join by first 4 characters of ticker
 
-## Observações de negócio
-- a chave de junção é o prefixo de 4 caracteres do ticker extraído de `dadosdemercado.com.br`
-- a API B3 fornece `cnpj` e `issuingCompany`; o script usa `issuingCompany[:4]` para casar com o ticker quando disponível
-- caso existam tickers sem match, o arquivo final manterá o registro com `cnpj` vazio para análise posterior
+## Business rules
+- join key: first 4 characters of the ticker extracted from `dadosdemercado.com.br`
+- the B3 API provides `cnpj` and `issuingCompany`; the script uses `issuingCompany[:4]` to match with the ticker when available
+- tickets are filtered to keep only those ending in 3, 4, 5, or 6 (standard equity types on B3)
+- if a ticker has no match, the final file will keep the record with an empty `cnpj` field for further analysis
