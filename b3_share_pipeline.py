@@ -173,15 +173,33 @@ def join_tickers_and_cnpjs(tickers, api_lookup):
     return joined
 
 
-def summarize(joined_rows):
+def filter_valid_tickers(joined_rows):
+    """
+    Filter tickers to keep only those ending in 3, 4, 5, or 6.
+    These are the standard trading stock types on B3.
+    """
+    valid_endings = {"3", "4", "5", "6"}
+    filtered = [r for r in joined_rows if r["ticker"][-1] in valid_endings]
+    return filtered
+
+
+def summarize(joined_rows, filtered_rows=None):
     matched = sum(1 for r in joined_rows if r["cnpj"])
     total = len(joined_rows)
     unmatched = [r for r in joined_rows if not r["cnpj"]]
-    print(f"Total tickers: {total}")
+    print(f"Total tickers coletados: {total}")
     print(f"Matched with CNPJ: {matched}")
     print(f"Unmatched tickers: {len(unmatched)}")
+    
+    if filtered_rows is not None:
+        filtered_total = len(filtered_rows)
+        filtered_matched = sum(1 for r in filtered_rows if r["cnpj"])
+        print(f"\nApós filtro (tickers terminados em 3, 4, 5, 6):")
+        print(f"  Total tickers: {filtered_total}")
+        print(f"  Matched with CNPJ: {filtered_matched}")
+    
     if unmatched:
-        print("Primeiros tickers sem CNPJ:")
+        print("\nPrimeiros tickers sem CNPJ:")
         for row in unmatched[:10]:
             print(f"  {row['ticker']} ({row['ticker_prefix']})")
 
@@ -215,14 +233,16 @@ def main():
 
     api_lookup = build_api_lookup(normalized_api)
     joined = join_tickers_and_cnpjs(tickers, api_lookup)
+    
+    filtered = filter_valid_tickers(joined)
     save_csv(
         "data/marts/b3_ticker_cnpj.csv",
         ["ticker", "ticker_prefix", "cnpj", "issuingCompany", "tradingName"],
-        joined,
+        filtered,
     )
 
-    summarize(joined)
-    print("Resultado final salvo em data/marts/b3_ticker_cnpj.csv")
+    summarize(joined, filtered)
+    print(f"Resultado final salvo em data/marts/b3_ticker_cnpj.csv")
 
 
 if __name__ == "__main__":
